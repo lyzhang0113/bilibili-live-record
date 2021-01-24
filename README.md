@@ -35,6 +35,7 @@ SAVE_DIR=./download
 docker build doby2333/live_recorder .
 ```
 2. 运行docker镜像
+别忘记挂载保存路径到外部~
 不添加环境变量： （修改config.ini)
 ```
 docker run --name live_recorder -d doby2333/live_recorder
