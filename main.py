@@ -1,13 +1,15 @@
 #!python
 # -*- coding: UTF-8 -*-
-
+import asyncio
 import logging
 import os
 import sys
+from concurrent.futures.thread import ThreadPoolExecutor
 from configparser import RawConfigParser
 
-import monitor
-import recorder_v2
+from monitor import Monitor
+from recorder_v2 import Recorder
+from thread_workers import RecordThread
 
 """
 File: main.py
@@ -38,16 +40,18 @@ log.addHandler(log_handler)
 log.info("当前日志记录等级：" + logging.getLevelName(log.level))
 
 # Recorder 和 Monitor
-recorder = recorder_v2.Recorder(room_id=room_id, save_dir=save_dir)
-monitor = monitor.Monitor(room_id)
+monitor = Monitor(room_id=room_id)
+recorder = Recorder(room_id=room_id, save_dir=save_dir)
+recorder_thread = RecordThread(recorder=recorder)
 
 
 @monitor.room.on("LIVE")  # 直播开始
 async def on_live(msg):
+    global recorder_thread
     log.info("********************【直播开始】********************")
     monitor.isStreaming = True
-    # 准备开始录制
-    recorder.start()
+    # 开始录制线程
+    safe_start_recording()
     pass
 
 
@@ -55,19 +59,45 @@ async def on_live(msg):
 async def on_prepare(msg):
     log.info("********************【直播结束】********************")
     monitor.isStreaming = False
-    # 结束录制，保存
-    recorder.stop()
+    # 结束录制线程
+    recorder_thread.stop()
     pass
 
 
-def connect_room():
-    try:
-        monitor.connect()
-    except:
-        connect_room()
+def safe_start_recording():
+    global recorder_thread
+    if recorder_thread.isRecording():
+        log.warning("下载线程已启动！不能重复启动！")
+        return
+    recorder_thread = RecordThread(recorder=recorder)
+    recorder_thread.start()
+
+
+async def ainput(prompt: str = ""):
+    log.info("在控制台输入stop以停止下载，输入start以开始下载")
+    with ThreadPoolExecutor(1, "AsyncInput", lambda x: print(x, end="", flush=True), (prompt,)) as executor:
+        return (await asyncio.get_event_loop().run_in_executor(
+            executor, sys.stdin.readline
+        )).rstrip()
+
+
+async def wait_for_stop():
+    global recorder_thread
+    while True:
+        input_waited = await ainput()
+        if input_waited == "stop":
+            recorder_thread.stop()
+        elif input_waited == "start":
+            safe_start_recording()
+        else:
+            log.warning("无效输入！输入stop以停止下载，输入start以开始下载")
 
 
 if __name__ == '__main__':
+    # 持续接受控制台输入，收到输入就发送停止录制请求
+    asyncio.get_event_loop().create_task(wait_for_stop())
+    # 如果运行时就在直播，则启动录制线程
     if monitor.isStreaming:
-        recorder.start()
-    connect_room()
+        safe_start_recording()
+    # 开启对直播间的监控，监听《直播开始》《直播结束》事件
+    monitor.connect()

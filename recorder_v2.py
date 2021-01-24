@@ -1,6 +1,5 @@
 #!python
 # -*- coding: UTF-8 -*-
-
 import logging
 import os
 import re
@@ -32,7 +31,7 @@ class Recorder:
         self.log = logging.getLogger("main")
         self.room_id = int(room_id)
         result = live.get_room_play_url(room_real_id=room_id)
-        self.download_flag = True
+        self.download_flag = None
         self.play_qn = result['current_qn']
         self.play_url = str(result['durl'][0]['url']).replace("https://", "http://")
         self.save_dir = save_dir
@@ -66,20 +65,22 @@ class Recorder:
 
             # 保存流
             self.save_stream()
-
             self.clean_up()
+            self.download_flag = False
 
+        except AssertionError as e:
+            self.log.error("未开播！停止录制")
             self.download_flag = False
 
         except Exception as e:
-            self.log.error("录制错误，重试开始" + str(e))
+            self.log.error("录制错误，重试开始，保存至新文件" + str(e))
             self.clean_up()
             self.download_flag = False
             self.start()
 
     def save_stream(self):
         try:
-            with open(self.file_path, "wb") as file:
+            with open(self.file_path, "ab") as file:
                 response = requests.get(self.play_url, stream=True, headers=utils.DEFAULT_HEADERS, timeout=180)
                 for data in response.iter_content(chunk_size=1024 * 1024):
                     if not self.download_flag:
@@ -88,7 +89,7 @@ class Recorder:
                     self.downloaded += len(data)
                 response.close()
         except:
-            self.log.warning("流断开，重新连接")
+            self.log.warning("流断开，重新连接，可能造成视频文件卡顿")
             self.play_url = str(live.get_room_play_url(room_real_id=self.room_id)['durl'][0]['url']).replace("https://",
                                                                                                              "http://")
             self.save_stream()
@@ -98,6 +99,8 @@ class Recorder:
         if '{endTime}' in self.file_path:
             curr_time = time.strftime(self.time_format, time.localtime())
             new_file_path = self.file_path.replace("{endTime}", curr_time)
+            while os.path.exists(new_file_path):
+                new_file_path += '.flv'
             os.rename(self.file_path, new_file_path)
             self.file_path = new_file_path
 
@@ -105,7 +108,11 @@ class Recorder:
         self.log.info("校准时间轴")
         flv = Flv(self.file_path, self.save_dir, False)
         flv.check()
+        os.remove(self.file_path)
 
     def stop(self):
-        self.log.info("结束录制" + str(self.room_id) + "！")
-        self.download_flag = False
+        if not self.download_flag:
+            self.log.warning("当前并没有在录制！无效停止")
+        else:
+            self.log.info("结束录制" + str(self.room_id) + "！")
+            self.download_flag = False
