@@ -7,7 +7,7 @@ import sys
 from configparser import RawConfigParser
 
 import monitor
-import recorder
+import recorder_v2
 
 """
 File: main.py
@@ -38,7 +38,7 @@ log.addHandler(log_handler)
 log.info("当前日志记录等级：" + logging.getLevelName(log.level))
 
 # Recorder 和 Monitor
-recorder = recorder.Recorder(room_id=room_id, save_dir=save_dir)
+recorder = recorder_v2.Recorder(room_id=room_id, save_dir=save_dir)
 monitor = monitor.Monitor(room_id)
 
 
@@ -60,7 +60,14 @@ async def on_prepare(msg):
     pass
 
 
+def connect_room():
+    try:
+        monitor.connect()
+    except:
+        connect_room()
+
+
 if __name__ == '__main__':
     if monitor.isStreaming:
         recorder.start()
-    monitor.connect()
+    connect_room()
