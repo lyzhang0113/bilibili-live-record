@@ -1,0 +1,4 @@
+FROM python
+MAINTAINER Doby2333
+WORKDIR /src
+COPY . .
