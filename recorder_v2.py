@@ -1,5 +1,6 @@
 #!python
 # -*- coding: UTF-8 -*-
+import gc
 import logging
 import os
 import re
@@ -8,7 +9,8 @@ import time
 import requests
 from bilibili_api import live
 from bilibili_api import utils
-from live_recorder.you_live.flv_checker import Flv
+
+from Flv import Flv
 
 """
 File: recorder.py
@@ -80,14 +82,18 @@ class Recorder:
 
     def save_stream(self):
         try:
-            with open(self.file_path, "ab") as file:
-                response = requests.get(self.play_url, stream=True, headers=utils.DEFAULT_HEADERS, timeout=180)
-                for data in response.iter_content(chunk_size=1024 * 1024):
-                    if not self.download_flag:
-                        break
-                    file.write(data)
-                    self.downloaded += len(data)
-                response.close()
+            response = requests.get(self.play_url, stream=True, headers=utils.DEFAULT_HEADERS, timeout=180)
+            file = open(self.file_path, "ab")
+            for chunk in response.iter_content(chunk_size=1024 * 1024):
+                if not self.download_flag:
+                    break
+                if chunk:
+                    file.write(chunk)
+                    self.downloaded += len(chunk)
+                if self.downloaded >= 1024 * 1024 * 32:
+                    gc.collect()
+                    self.downloaded = 0
+            response.close()
         except:
             self.log.warning("流断开，重新连接，可能造成视频文件卡顿")
             self.play_url = str(live.get_room_play_url(room_real_id=self.room_id)['durl'][0]['url']).replace("https://",
@@ -99,12 +105,15 @@ class Recorder:
         if '{endTime}' in self.file_path:
             curr_time = time.strftime(self.time_format, time.localtime())
             new_file_path = self.file_path.replace("{endTime}", curr_time)
+            i = 0
             while os.path.exists(new_file_path):
-                new_file_path += '.flv'
+                new_file_path = str(new_file_path).replace(".flv", '_' + str(i) + ".flv")
+                i += 1
             os.rename(self.file_path, new_file_path)
             self.file_path = new_file_path
 
         # 检查flv时间轴
+        # TODO: 保存路径/\错误
         self.log.info("校准时间轴")
         flv = Flv(self.file_path, self.save_dir, False)
         flv.check()
