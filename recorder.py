@@ -11,7 +11,7 @@ Author: Doby2333
 Date Created: 2021/01/24
 Last Edited: 2021/01/24
 Description: Does the recording thing.
-Note: Only for Bilibili live
+Note: *** Deprecated ***
 """
 
 

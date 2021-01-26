@@ -18,7 +18,7 @@ class Monitor:
 
     def __init__(self, room_id):
         """
-        监控直播间
+        Bilibili直播间监视器对象
         :param room_id: 房间号
         """
         self.log = logging.getLogger("main")
@@ -34,9 +34,11 @@ class Monitor:
         """
         连接直播间进行监控
         """
+        # 因为有可能在连接断开时下播，所以更新直播状态
         self.isStreaming = (live.get_room_info(self.room_id)['room_info']['live_status'] == 1)
         try:
             self.room.connect()
         except:
+            # 有时候网络不稳定会导致掉线，尝试重连，无限循环
             self.room.disconnect()
             self.connect()

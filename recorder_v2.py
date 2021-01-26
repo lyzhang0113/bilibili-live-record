@@ -12,12 +12,12 @@ from bilibili_api import utils
 from live_recorder.you_live.flv_checker import Flv
 
 """
-File: recorder.py
+File: recorder_v2.py
 Author: Doby2333
 Date Created: 2021/01/24
 Last Edited: 2021/01/24
 Description: Does the recording thing.
-Note: Only for Bilibili live
+Note: Only for Bilibili live, 部分内容摘抄自you-live项目
 """
 
 
@@ -42,6 +42,10 @@ class Recorder:
         self.downloaded = 0
 
     def start(self):
+        """
+        请求开始录制
+        :return: None
+        """
         try:
             self.download_flag = True
             assert live.get_room_info(self.room_id)['room_info']['live_status'] == 1
