@@ -9,7 +9,7 @@
 - [bilibili-api](https://github.com/Passkou/bilibili_api) 
 调用Bilibili各种API的库
 - [you-live](https://github.com/nICEnnnnnnnLee/LiveRecorder) 
-录制直播
+参考了下载视频流的逻辑，使用了修复flv时间轴的方法
 
 特别感谢上述库的作者，库很好用！
 
@@ -42,5 +42,5 @@ docker run --name live_recorder -d doby2333/live_recorder
 ```
 使用环境变量：
 ```
-docker run --name live_recorder --env LOG_LEVEL=INFO --env ROOM_ID=12345 -- SAVE_DIR=./download -d doby2333/live_recorder
+docker run --name live_recorder --env LOG_LEVEL=INFO --env ROOM_ID=12345 --env SAVE_DIR=./download -d doby2333/live_recorder
 ```
