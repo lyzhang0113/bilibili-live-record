@@ -24,10 +24,10 @@ class Monitor:
         self.log = logging.getLogger("main")
         self.room_id = room_id
         self.room = live.LiveDanmaku(room_display_id=room_id)
-        room_info = live.get_room_info(room_id)
+        room_info = live.get_room_info(room_real_id=room_id)
         uname = str(room_info['anchor_info']['base_info']['uname'])
         self.log.info("准备监控 [" + uname + "] 的直播间，房间号：" + str(room_id))
-        self.isStreaming = (live.get_room_info(room_id)['room_info']['live_status'] == 1)
+        self.isStreaming = room_info['room_info']['live_status'] == 1
         self.log.info("当前主播状态：" + "正在直播" if self.isStreaming else "未开播")
 
     def connect(self):

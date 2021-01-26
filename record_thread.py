@@ -3,6 +3,14 @@ import threading
 
 from recorder_v2 import Recorder
 
+"""
+File: record_thread.py
+Author: Doby2333
+Date Created: 2021/01/24
+Last Edited: 2021/01/24
+Description: 起一个线程负责录制
+"""
+
 
 class RecordThread(threading.Thread):
 
@@ -13,10 +21,10 @@ class RecordThread(threading.Thread):
 
     def run(self):
         self.recorder.start()
-        self.log.warning("下载线程结束")
+        self.log.warning("录制线程结束")
 
     def stop(self):
         self.recorder.stop()
 
     def isRecording(self):
-        return self.recorder.download_flag
+        return self.recorder.is_downloading()
