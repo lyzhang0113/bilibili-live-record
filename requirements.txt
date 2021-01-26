@@ -1,1 +1,2 @@
 bilibili-api==3.1.7
+you-live==1.0.6

@@ -9,8 +9,7 @@ import time
 import requests
 from bilibili_api import live
 from bilibili_api import utils
-
-from Flv import Flv
+from live_recorder.you_live.flv_checker import Flv
 
 """
 File: recorder.py
